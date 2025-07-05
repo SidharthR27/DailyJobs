@@ -1,0 +1,46 @@
+name: Run Python Files Sequentially
+
+on:
+  schedule:
+    - cron: '30 17 * * *'  # 11:00 PM IST (17:30 UTC)
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  run-python-files:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Run first Python file
+      env:
+            my_password: ${{ secrets.my_password }}
+            GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: python first_file.py
+      
+    - name: Run second Python file
+      run: python second_file.py
+      
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Commit and push changes
+      run: |
+        git add .
+        git diff --staged --quiet || git commit -m "Automated daily commit - $(date +'%Y-%m-%d %H:%M:%S IST') [skip ci]"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

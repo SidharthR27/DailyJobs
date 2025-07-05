@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <title>Kerala Tech Jobs - Latest Opportunities in Infopark & Technopark</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4c51bf;
+            text-decoration: none;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 0.2rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4c51bf;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.875rem 1.25rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            min-width: 200px;
+        }
+
+        .search-btn {
+            padding: 0.875rem 2rem;
+            background: #4c51bf;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .search-btn:hover {
+            background: #3730a3;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .main-content {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 3rem 0;
+            margin-top: -2rem;
+            position: relative;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* Job Cards */
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .job-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .job-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4c51bf, #7c3aed);
+        }
+
+        .job-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .job-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .company-name {
+            font-size: 1rem;
+            color: #4c51bf;
+            font-weight: 600;
+        }
+
+        .job-source {
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .job-description {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .job-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tag {
+            background: #f3f4f6;
+            color: #374151;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .tag.clr1 {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .tag.clr2 {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .tag.clr3 {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .tag.clr4 {
+            background: #fee2e2; /* soft red */
+            color: #991b1b;      /* deep red */
+        }
+
+        .tag.clr5 {
+            background: #ede9fe; /* soft purple */
+            color: #5b21b6;      /* deep purple */
+        }
+
+        .tag.clr6 {
+            background: #cffafe; /* soft cyan */
+            color: #155e75;      /* deep teal */
+        }
+
+        .job-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .job-deadline {
+            font-size: 0.9rem;
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .view-details-btn {
+            background: #4c51bf;
+            color: white;
+            padding: 0.625rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .view-details-btn:hover {
+            background: #3730a3;
+            transform: translateY(-1px);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            position: sticky;
+            top: 0;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            background-color: #a4b6fd;
+        }
+
+
+        .modal-close {
+            background: #f3f4f6;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #6b7280;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .modal-close:hover {
+            background: #ea1c1c;
+            color: #374151;
+        }
+
+        .modal-body {
+            padding: 0 2rem 2rem;
+            background-color: #f6f8ff;
+        }
+
+         .modal-content {
+            line-height: 1.7;
+            
+        }
+
+        /* Job Details Hidden by Default */
+        .job-details {
+            display: none;
+        }
+
+
+        /* Footer */
+        .footer {
+            background: #1f2937;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: 100%;
+            }
+            .header-content{
+                padding: 0;
+                line-height: 1.4;
+
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: .5rem;
+            }
+            .stat-item{
+                line-height: 1.1;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .jobs-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .job-footer {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .modal {
+                margin: 0px;
+                max-height: calc(100vh - 150px);
+            }
+
+            .modal-header {
+                padding: .8rem 1.5rem;
+            }
+
+            .modal-body {
+                padding: 0 .1rem 0rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 2rem 0;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .search-section {
+                padding: 1.5rem;
+            }
+
+            .job-card {
+                padding: 1.25rem;
+            }
+
+            .modal-overlay {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <div>
+                    <a href="#" class="logo">Kerala Tech Jobs</a>
+                    <div class="subtitle">Latest opportunities in Infopark Kochi & Technopark Trivandrum</div>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number"><!-- TOTAL_JOBS_COUNT --></span>
+                        <span class="stat-label">Active Jobs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number"><!-- TOTAL_COMPANIES_COUNT --></span>
+                        <span class="stat-label">Companies</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Find Your Dream Tech Job in Kerala</h1>
+            <p>Discover the latest opportunities from Infopark and Technopark. From internships to senior roles, find
+                the perfect match for your career.</p>
+
+            <div class="search-section">
+                <div class="search-bar">
+                    <input type="text" class="search-input" placeholder="Search jobs, companies, or skills...">
+                    <button class="search-btn">Search</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Latest Job Openings</h2>
+            </div>
+
+            <div class="jobs-grid">
+                <!-- JOBS_PLACEHOLDER -->
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="jobModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div></div>
+                <button class="modal-close" id="closeModal">X</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-content" id="modalContent">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="container">
+            <p style="color: #9ca3af;">
+                © 2025 Kerala Tech Jobs. Made with ❤️ for Kerala's tech community by Sid.<br>
+                <small>Last updated: <!-- LAST_UPDATED --></small>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('jobModal');
+            const modalContent = document.getElementById('modalContent');
+            const closeModal = document.getElementById('closeModal');
+            const jobsGrid = document.querySelector('.jobs-grid');
+
+            // --- FIX START ---
+            // Use event delegation on the jobs grid for a more targeted and robust approach.
+            if (jobsGrid) {
+                jobsGrid.addEventListener('click', function(e) {
+                    // Find the closest '.view-details-btn' parent of the clicked element.
+                    // This is more reliable than checking e.target directly.
+                    const button = e.target.closest('.view-details-btn');
+
+                    if (button) {
+                        e.preventDefault();
+                        const jobCard = button.closest('.job-card');
+
+                        const jobDetails = jobCard.querySelector('.job-details').innerHTML;
+
+
+                        modalContent.innerHTML = jobDetails;
+                        
+                        modal.classList.add('active');
+                        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                    }
+                });
+            }
+            // --- FIX END ---
+
+            // Close modal
+            function closeModalFunction() {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+
+            closeModal.addEventListener('click', closeModalFunction);
+
+            // Close modal when clicking outside
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModalFunction();
+                }
+            });
+
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    closeModalFunction();
+                }
+            });
+
+            
+            // Search functionality
+            const searchBtn = document.querySelector('.search-btn');
+            const searchInput = document.querySelector('.search-input');
+            
+            searchBtn.addEventListener('click', function() {
+                const query = searchInput.value.trim();
+                if (query) {
+                    alert(`Searching for: ${query}`);
+                }
+            });
+
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchBtn.click();
+                }
+            });
+
+        });
+    </script>
+</body>
+
+</html>
