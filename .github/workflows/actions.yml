@@ -43,7 +43,7 @@ jobs:
     - name: Commit and push changes
       run: |
         git add .
-        git diff --staged --quiet || git commit -m "Automated daily commit - $(date +'%Y-%m-%d %H:%M:%S IST') [skip ci]"
+        git diff --staged --quiet || git commit -m "Automated daily commit - $(date +'%Y-%m-%d %H:%M:%S IST')"
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

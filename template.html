@@ -578,22 +578,24 @@
         <div class="container">
             <p style="color: #9ca3af;">
                 © 2025 Kerala Tech Jobs. Made with ❤️ for Kerala's tech community by Sid.<br>
-                <small>Last updated: <!-- LAST_UPDATED --></small>
+                <small>Last updated: <!-- LAST_UPDATED --></small><br>
+                <small><a href="mailto:sidharthr333@gmail.com" style="color: inherit; text-decoration: none;">Contact Me</a></small>
             </p>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
+            // Modal and Search Functionality
             const modal = document.getElementById('jobModal');
             const modalContent = document.getElementById('modalContent');
             const closeModal = document.getElementById('closeModal');
             const jobsGrid = document.querySelector('.jobs-grid');
 
-            // --- FIX START ---
+            // --- Modal Event Handling ---
             // Use event delegation on the jobs grid for a more targeted and robust approach.
             if (jobsGrid) {
-                jobsGrid.addEventListener('click', function(e) {
+                jobsGrid.addEventListener('click', function (e) {
                     // Find the closest '.view-details-btn' parent of the clicked element.
                     // This is more reliable than checking e.target directly.
                     const button = e.target.closest('.view-details-btn');
@@ -604,15 +606,13 @@
 
                         const jobDetails = jobCard.querySelector('.job-details').innerHTML;
 
-
                         modalContent.innerHTML = jobDetails;
-                        
+
                         modal.classList.add('active');
                         document.body.style.overflow = 'hidden'; // Prevent background scrolling
                     }
                 });
             }
-            // --- FIX END ---
 
             // Close modal
             function closeModalFunction() {
@@ -620,41 +620,141 @@
                 document.body.style.overflow = 'auto';
             }
 
-            closeModal.addEventListener('click', closeModalFunction);
+            if (closeModal) {
+                closeModal.addEventListener('click', closeModalFunction);
+            }
 
             // Close modal when clicking outside
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeModalFunction();
-                }
-            });
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) {
+                        closeModalFunction();
+                    }
+                });
+            }
 
             // Close modal with Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modal.classList.contains('active')) {
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
                     closeModalFunction();
                 }
             });
 
-            
-            // Search functionality
-            const searchBtn = document.querySelector('.search-btn');
+            // --- Search Functionality ---
             const searchInput = document.querySelector('.search-input');
-            
-            searchBtn.addEventListener('click', function() {
-                const query = searchInput.value.trim();
-                if (query) {
-                    alert(`Searching for: ${query}`);
-                }
-            });
+            const searchBtn = document.querySelector('.search-btn');
+            const jobCards = document.querySelectorAll('.job-card');
 
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchBtn.click();
-                }
-            });
+            function performSearch() {
+                const query = searchInput.value.toLowerCase().trim();
 
+                jobCards.forEach(card => {
+                    const jobTitle = card.querySelector('.job-title').textContent.toLowerCase();
+                    const companyName = card.querySelector('.company-name').textContent.toLowerCase();
+                    const jobDescription = card.querySelector('.job-description').textContent.toLowerCase();
+                    const jobDetails = card.querySelector('.job-details') ? card.querySelector('.job-details').textContent.toLowerCase() : '';
+
+                    const searchText = `${jobTitle} ${companyName} ${jobDescription} ${jobDetails}`;
+
+                    if (query === '' || searchText.includes(query)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            // Search Event listeners
+            if (searchInput) {
+                searchInput.addEventListener('input', performSearch);
+                searchInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+
+            if (searchBtn) {
+                searchBtn.addEventListener('click', performSearch);
+            }
+
+            // --- Animation Functionality ---
+            const animationStyles = `
+        .job-card {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .job-card.animate-in {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    `;
+
+            // Inject styles
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = animationStyles;
+            document.head.appendChild(styleSheet);
+
+            // Setup Intersection Observer for animations
+            const animateOnScroll = () => {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach((entry, index) => {
+                        if (entry.isIntersecting) {
+                            // Add staggered delay
+                            setTimeout(() => {
+                                entry.target.classList.add('animate-in');
+                            }, index * 100);
+
+                            // Stop observing this card
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                });
+
+                // Observe all job cards
+                document.querySelectorAll('.job-card').forEach(card => {
+                    observer.observe(card);
+                });
+            };
+
+            // Initialize animations
+            animateOnScroll();
         });
+
+        // Initialize animations if page is already loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                // Animation initialization is already handled above
+            });
+        } else {
+            // If DOM is already loaded, initialize animations
+            const animateOnScroll = () => {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach((entry, index) => {
+                        if (entry.isIntersecting) {
+                            setTimeout(() => {
+                                entry.target.classList.add('animate-in');
+                            }, index * 100);
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                });
+
+                document.querySelectorAll('.job-card').forEach(card => {
+                    observer.observe(card);
+                });
+            };
+
+            animateOnScroll();
+        }
     </script>
 </body>
 
