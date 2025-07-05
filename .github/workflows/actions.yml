@@ -8,6 +8,9 @@ on:
 jobs:
   run-python-files:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
     
     steps:
     - name: Checkout code
