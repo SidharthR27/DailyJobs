@@ -27,10 +27,10 @@ jobs:
       env:
             my_password: ${{ secrets.my_password }}
             GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      run: python first_file.py
+      run: python main.py
       
     - name: Run second Python file
-      run: python second_file.py
+      run: python generate_site.py
       
     - name: Configure Git
       run: |
