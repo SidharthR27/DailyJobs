@@ -248,6 +248,7 @@ def fetch_technopark_jobs():
 
 def ai_parsing():
     global combined_new_jobs
+    global final_jobs_list
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     print("Firing🔥 up the AI🌪️...")
 
@@ -297,9 +298,19 @@ def ai_parsing():
             # print(f"Tags: {structured_data['tags']}")
             # print(f"Summary: {structured_data['summary']}")
             # You can also update the job dictionary with the structured data if needed
-            job["job_description"] = markdown.markdown(structured_data['prettified_description'])
-            job["tags"] = structured_data['tags']
-            job["summary"] = structured_data['summary']
+            final_jobs_list.append({
+                "job_title": job["job_title"],
+                "company": job["company"],
+                "url": job["url"],
+                "location": job["location"],
+                "closing_date": job["closing_date"],
+                "job_description": markdown.markdown(structured_data['prettified_description']),
+                "tags": structured_data['tags'],
+                "summary": structured_data['summary']
+            })
+            # job["job_description"] = markdown.markdown(structured_data['prettified_description'])
+            # job["tags"] = structured_data['tags']
+            # job["summary"] = structured_data['summary']
             time.sleep(7)  # Sleep to avoid hitting API rate limits
         except Exception as e:
             print(f"⚠️ Error parsing job {job['job_title']} at {job['company']}: {e}")
@@ -307,13 +318,15 @@ def ai_parsing():
 
 def main():
     global combined_new_jobs
+    global final_jobs_list
     combined_new_jobs = []
+    final_jobs_list = []
     fetch_infopark_jobs()
     fetch_technopark_jobs()
     ai_parsing()
     with open("jobs.json", "w") as f:
-        json.dump(combined_new_jobs, f, indent=4)
-    # print(combined_new_jobs)
+        json.dump(final_jobs_list, f, indent=4)
+    # print(final_jobs_list)
 
 if __name__ == "__main__":
     main()

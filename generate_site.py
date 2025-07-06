@@ -17,7 +17,7 @@ def generate_job_card_html(job, job_index):
     location = escape(job.get('location', 'Location not specified'))
     closing_date = escape(job.get('closing_date', 'Not specified'))
     description = job.get('job_description', '')
-    summary = escape(job.get('summary', description))
+    summary = escape(job.get('summary', "Check the job description for details."))
     
     # Use summary if available, otherwise use cleaned description
     display_description = summary 
