@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from html import escape
 import random
 
@@ -72,7 +72,10 @@ def generate_index_html():
         # Calculate statistics
         total_jobs = len(jobs_data)
         unique_companies = len(set(job.get('company', 'Unknown') for job in jobs_data))
-        last_updated = datetime.now().strftime('%B %d, %Y at %I:%M %p')
+        utc_now = datetime.now(timezone.utc)
+        ist_offset = timedelta(hours=5, minutes=30)
+        ist_now = utc_now.astimezone(timezone(ist_offset))
+        last_updated = ist_now.strftime('%B %d, %Y at %I:%M %p')
         
         # Create JavaScript data for job details
         jobs_js_data = json.dumps(jobs_data, ensure_ascii=False)
