@@ -92,19 +92,40 @@ def fetch_infopark_jobs():
                 soup = BeautifulSoup(jobs_html, "html.parser")
                 rows = soup.find_all("tr")[1:]  # skip header row
 
+                # for row in rows:
+                #     cols = row.find_all("td")
+                #     if len(cols) < 4:
+                #         continue
+
+                #     title = cols[0].get_text(strip=True)
+                #     company = cols[1].get_text(strip=True)
+                #     last_date = cols[2].get_text(strip=True)
+                #     full_url = cols[3].find("a")["href"]
+
+                #     job_id = extract_job_id(full_url)
+                #     if job_id != -1:  # Only add valid job IDs
+                #         jobs[job_id] = {
+                #             "title": title,
+                #             "company": company,
+                #             "last_date": last_date,
+                #             "url": full_url
+                #         }
+                
                 for row in rows:
                     cols = row.find_all("td")
-                    if len(cols) < 4:
-                        continue
+                    if len(cols) < 5:
+                        continue  # not a valid job row
 
-                    title = cols[0].get_text(strip=True)
-                    company = cols[1].get_text(strip=True)
-                    last_date = cols[2].get_text(strip=True)
-                    full_url = cols[3].find("a")["href"]
+                    date_posted = cols[0].get_text(strip=True)
+                    title = cols[1].get_text(strip=True)
+                    company = cols[2].get_text(strip=True)
+                    last_date = cols[3].get_text(strip=True)
+                    full_url = cols[4].find("a")["href"]
 
                     job_id = extract_job_id(full_url)
-                    if job_id != -1:  # Only add valid job IDs
+                    if job_id != -1:
                         jobs[job_id] = {
+                            "date_posted": date_posted,
                             "title": title,
                             "company": company,
                             "last_date": last_date,
