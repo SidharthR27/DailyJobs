@@ -225,6 +225,7 @@ def fetch_infopark_jobs():
 
 def fetch_technopark_jobs():
     global combined_new_jobs
+    if_new_jobs = False
     print("🔎 Fetching jobs from Technopark...")
     
     today = datetime.today().date()
@@ -335,6 +336,8 @@ def ai_parsing():
             time.sleep(7)  # Sleep to avoid hitting API rate limits
         except Exception as e:
             print(f"⚠️ Error parsing job {job['job_title']} at {job['company']}: {e}")
+            print(response.text if response else "No response received")
+            print(structured_data if structured_data else "")
             continue
 
 def main():
