@@ -91,25 +91,6 @@ def fetch_infopark_jobs():
                 jobs_html = response.json()['all_jobs']
                 soup = BeautifulSoup(jobs_html, "html.parser")
                 rows = soup.find_all("tr")[1:]  # skip header row
-
-                # for row in rows:
-                #     cols = row.find_all("td")
-                #     if len(cols) < 4:
-                #         continue
-
-                #     title = cols[0].get_text(strip=True)
-                #     company = cols[1].get_text(strip=True)
-                #     last_date = cols[2].get_text(strip=True)
-                #     full_url = cols[3].find("a")["href"]
-
-                #     job_id = extract_job_id(full_url)
-                #     if job_id != -1:  # Only add valid job IDs
-                #         jobs[job_id] = {
-                #             "title": title,
-                #             "company": company,
-                #             "last_date": last_date,
-                #             "url": full_url
-                #         }
                 
                 for row in rows:
                     cols = row.find_all("td")
@@ -306,20 +287,20 @@ def ai_parsing():
 
             # Make the API call using the recommended client.models.generate_content
             response = client.models.generate_content(
-                model="gemini-2.0-flash", # Or another suitable model
+                model="gemini-2.5-flash-lite", # Or another suitable model
                 contents=[messy_job_description],
                 config=generation_config
             )
 
             # The response text will be a clean JSON string
             structured_data = json.loads(response.text)
+
+            if isinstance(structured_data, list):
+                print("received list")
+                structured_data = structured_data[0]
             
             # Print or store the structured data as needed
             print(f"\n--- Parsed Job Data for {job['job_title']} at {job['company']} ---")
-            # print(f"Job Description: {structured_data['prettified_description']}")
-            # print(f"Tags: {structured_data['tags']}")
-            # print(f"Summary: {structured_data['summary']}")
-            # You can also update the job dictionary with the structured data if needed
             final_jobs_list.append({
                 "job_title": job["job_title"],
                 "company": job["company"],
@@ -330,10 +311,7 @@ def ai_parsing():
                 "tags": structured_data['tags'],
                 "summary": structured_data['summary']
             })
-            # job["job_description"] = markdown.markdown(structured_data['prettified_description'])
-            # job["tags"] = structured_data['tags']
-            # job["summary"] = structured_data['summary']
-            time.sleep(7)  # Sleep to avoid hitting API rate limits
+            time.sleep(8)  # Sleep to avoid hitting API rate limits
         except Exception as e:
             print(f"⚠️ Error parsing job {job['job_title']} at {job['company']}: {e}")
             print(response.text if response else "No response received")
