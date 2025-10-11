@@ -257,6 +257,7 @@ def ai_parsing():
 
 
     for job in combined_new_jobs:
+        structured_data = None
         try:
             # Prepare the messy job description from the job dictionary
             messy_job_description = job.get("job_description", "")
