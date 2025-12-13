@@ -3,10 +3,11 @@ import os
 import time
 from bs4 import BeautifulSoup
 from datetime import datetime
-from google import genai
-from google.genai import types
+# from google import genai
+# from google.genai import types
 import json
 import markdown
+from groq import Groq
 
 def fetch_infopark_jobs():
     global combined_new_jobs
@@ -252,21 +253,22 @@ def fetch_technopark_jobs():
 def ai_parsing():
     global combined_new_jobs
     global final_jobs_list
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    # client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
     print("Firing🔥 up the AI🌪️...")
+    client = Groq(api_key=os.environ["GEMINI_API_KEY"])
 
 
     for job in combined_new_jobs:
         structured_data = None
         try:
-            # Prepare the messy job description from the job dictionary
             messy_job_description = job.get("job_description", "")
 
             if not messy_job_description:
-                print(f"⚠️ No job description found for {job['job_title']} at {job['company']}. Skipping AI parsing.")
+                print(f"⚠️ No job description found for {job['job_title']}. Skipping.")
                 continue
 
-            # System instruction to guide the model's behavior and output format
+            # 2. Refined System Instruction
             system_instruction = """
             You are an expert at parsing and structuring job descriptions.
             Your task is to analyze the user's job description text and convert it into a clean, well-structured JSON object. You MUST return ONLY a valid JSON object and nothing else.
@@ -280,43 +282,40 @@ def ai_parsing():
             3.  **"summary"**: This must be a very concise, two-sentence summary of the job role, suitable for a quick preview, in max 25 words.
             """
 
-            # Configuration for the generation request, including specifying JSON output
-            generation_config = types.GenerateContentConfig(
-                response_mime_type="application/json",
-                system_instruction=system_instruction
+            # 3. The API Call
+            chat_completion = client.chat.completions.create(
+               model="qwen/qwen3-32b", # <--- CHANGED to the smarter model
+                messages=[
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": messy_job_description}
+                ],
+                response_format={"type": "json_object"}, # Forces valid JSON output
+                temperature=0.2  # Low temperature for precision
             )
 
-            # Make the API call using the recommended client.models.generate_content
-            response = client.models.generate_content(
-                model="gemini-2.5-flash-lite", # Or another suitable model
-                contents=[messy_job_description],
-                config=generation_config
-            )
+            # 4. Parsing
+            response_content = chat_completion.choices[0].message.content
+            structured_data = json.loads(response_content)
 
-            # The response text will be a clean JSON string
-            structured_data = json.loads(response.text)
-
-            if isinstance(structured_data, list):
-                print("received list")
-                structured_data = structured_data[0]
+            print(f"\n--- Parsed Job Data for {job['job_title']} ---")
             
-            # Print or store the structured data as needed
-            print(f"\n--- Parsed Job Data for {job['job_title']} at {job['company']} ---")
             final_jobs_list.append({
                 "job_title": job["job_title"],
                 "company": job["company"],
                 "url": job["url"],
                 "location": job["location"],
                 "closing_date": job["closing_date"],
-                "job_description": markdown.markdown(structured_data['prettified_description']),
-                "tags": structured_data['tags'],
-                "summary": structured_data['summary']
+                "job_description": markdown.markdown(structured_data.get('prettified_description', "")),
+                "tags": structured_data.get('tags', []),
+                "summary": structured_data.get('summary', "")
             })
-            time.sleep(8)  # Sleep to avoid hitting API rate limits
+
+            # 5. Rate Limiting
+            time.sleep(12)
+
         except Exception as e:
-            print(f"⚠️ Error parsing job {job['job_title']} at {job['company']}: {e}")
-            print(response.text if response else "No response received")
-            print(structured_data if structured_data else "")
+            print(f"⚠️ Error parsing job {job['job_title']}: {e}")
+            time.sleep(30)
             continue
 
 def main():
