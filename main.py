@@ -311,11 +311,11 @@ def ai_parsing():
             })
 
             # 5. Rate Limiting
-            time.sleep(12)
+            time.sleep(20)
 
         except Exception as e:
             print(f"⚠️ Error parsing job {job['job_title']}: {e}")
-            time.sleep(30)
+            time.sleep(60)
             continue
 
 def main():
