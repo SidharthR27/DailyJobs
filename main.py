@@ -284,7 +284,7 @@ def ai_parsing():
 
             # 3. The API Call
             chat_completion = client.chat.completions.create(
-               model="qwen/qwen3-32b", # <--- CHANGED to the smarter model
+               model="openai/gpt-oss-120b", # <--- CHANGED to the smarter model
                 messages=[
                     {"role": "system", "content": system_instruction},
                     {"role": "user", "content": messy_job_description}
