@@ -2,9 +2,7 @@ import requests
 import os
 import time
 from bs4 import BeautifulSoup
-from datetime import datetime
-# from google import genai
-# from google.genai import types
+from datetime import datetime, timedelta
 import json
 import markdown
 from groq import Groq
@@ -12,129 +10,290 @@ from groq import Groq
 def fetch_infopark_jobs():
     global combined_new_jobs
     print("🔎 Fetching jobs from Infopark...")
-    
+
     HEADERS = {
-    "accept": "*/*",
-    "accept-encoding": "gzip, deflate, br, zstd",
-    "accept-language": "en-GB,en;q=0.8",
-    "host": "infopark.in",
-    "referer": "https://infopark.in/companies/job-search?page=1",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
-    "x-requested-with": "XMLHttpRequest"
-}
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br, zstd",
+        "accept-language": "en-GB,en;q=0.8",
+        "referer": "https://infopark.in/companies-job?page=1",
+        "user-agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/138.0.0.0 Safari/537.36"
+        ),
+        "x-requested-with": "XMLHttpRequest"
+    }
 
-    BASE_URL = "https://infopark.in/companies/job-search?page={page}&search="
-    LAST_IDS_FILE = "last_3_days_job_ids.txt"
+    # CURRENT Infopark AJAX endpoint
+    BASE_URL = "https://infopark.in/companies-job?page={page}&search="
 
+    # ---------------------------------------------------------
+    # Get total number of pages
+    # ---------------------------------------------------------
     def get_total_pages():
-        response = requests.get(BASE_URL.format(page=1), headers=HEADERS, verify=False)
-        pagination_html = response.json().get("pagination", "")
-        soup = BeautifulSoup(pagination_html, "html.parser")
-        page_links = soup.find_all("a", class_="page-link")
-        pages = [int(a.text) for a in page_links if a.text.isdigit()]
-        return max(pages) if pages else 1
-
-    def extract_job_id(url):
         try:
-            return int(url.strip("/").split("/")[-2])
-        except:
-            return -1
+            response = requests.get(
+                BASE_URL.format(page=1),
+                headers=HEADERS,
+                verify=False,
+                timeout=30
+            )
+            response.raise_for_status()
 
-    def load_last_3_days_ids():
-        """Load the last 3 days' job IDs from file"""
-        if not os.path.exists(LAST_IDS_FILE):
-            return []
-        
-        try:
-            with open(LAST_IDS_FILE, "r") as f:
-                content = f.read().strip()
-                if not content:
-                    return []
-                # Convert comma-separated string to list of integers
-                return [int(id_str) for id_str in content.split(",") if id_str.strip()]
-        except (ValueError, IOError) as e:
-            print(f"⚠️ Error reading last IDs file: {e}")
-            return []
+            data = response.json()
+            pagination_html = data.get("pagination", "")
 
-    def save_last_3_days_ids(ids_queue):
-        """Save the last 3 days' job IDs to file"""
-        try:
-            with open(LAST_IDS_FILE, "w") as f:
-                f.write(",".join(map(str, ids_queue)))
-        except IOError as e:
-            print(f"⚠️ Error saving last IDs file: {e}")
+            soup = BeautifulSoup(pagination_html, "html.parser")
 
-    def update_ids_queue(ids_queue, new_highest_id):
-        """Update the queue with new highest ID, maintaining 3-day window"""
-        # Add new highest ID to the end
-        ids_queue.append(new_highest_id)
-        
-        # Keep only the last 3 days (remove oldest if we have more than 3)
-        if len(ids_queue) > 3:
-            ids_queue.pop(0)  # Remove the oldest (first) element
-        
-        return ids_queue
+            pages = []
 
-    def get_3_day_threshold(ids_queue):
-        """Get the threshold ID for 3-day window"""
-        if not ids_queue:
-            return -1  # If no previous data, get all jobs
-        return ids_queue[0]  # The oldest ID in our 3-day window
+            # Extract page numbers from pagination links
+            for link in soup.find_all("a", href=True):
+                text = link.get_text(strip=True)
 
+                if text.isdigit():
+                    pages.append(int(text))
+
+                # Also extract page number from href if available
+                href = link.get("href", "")
+                match = __import__("re").search(r"[?&]page=(\d+)", href)
+
+                if match:
+                    pages.append(int(match.group(1)))
+
+            total_pages = max(pages) if pages else 1
+
+            print(f"📑 Infopark has {total_pages} page(s).")
+
+            return total_pages
+
+        except Exception as e:
+            print(f"⚠️ Error getting Infopark page count: {e}")
+            return 1
+
+    # ---------------------------------------------------------
+    # Fetch jobs from listing pages
+    # ---------------------------------------------------------
     def fetch_all_jobs():
         total_pages = get_total_pages()
         jobs = {}
 
+        today = datetime.today().date()
+
+        # Last 3 calendar days:
+        # today, yesterday and day before yesterday
+        oldest_date = today - timedelta(days=2)
+
         for page in range(1, total_pages + 1):
-            print(f"📄 Fetching page {page}...")
+
+            print(f"📄 Fetching Infopark page {page}/{total_pages}...")
+
             try:
-                response = requests.get(BASE_URL.format(page=page), headers=HEADERS, verify=False)
-                jobs_html = response.json()['all_jobs']
+                response = requests.get(
+                    BASE_URL.format(page=page),
+                    headers=HEADERS,
+                    verify=False,
+                    timeout=30
+                )
+
+                response.raise_for_status()
+
+                data = response.json()
+                jobs_html = data.get("all_jobs", "")
+
+                if not jobs_html:
+                    print(f"⚠️ No job HTML returned for page {page}")
+                    continue
+
                 soup = BeautifulSoup(jobs_html, "html.parser")
-                rows = soup.find_all("tr")[1:]  # skip header row
-                
+                rows = soup.find_all("tr")
+
+                page_dates = []
+
                 for row in rows:
+
                     cols = row.find_all("td")
+
                     if len(cols) < 5:
-                        continue  # not a valid job row
+                        continue
 
-                    date_posted = cols[0].get_text(strip=True)
-                    title = cols[1].get_text(strip=True)
-                    company = cols[2].get_text(strip=True)
-                    last_date = cols[3].get_text(strip=True)
-                    full_url = cols[4].find("a")["href"]
+                    date_posted = cols[0].get_text(" ", strip=True)
+                    title = cols[1].get_text(" ", strip=True)
+                    company = cols[2].get_text(" ", strip=True)
+                    last_date = cols[3].get_text(" ", strip=True)
 
-                    job_id = extract_job_id(full_url)
-                    if job_id != -1:
-                        jobs[job_id] = {
+                    link = cols[4].find("a", href=True)
+
+                    if not link:
+                        continue
+
+                    full_url = link["href"].strip()
+
+                    # Make URL absolute if Infopark ever returns
+                    # a relative URL
+                    if full_url.startswith("/"):
+                        full_url = "https://infopark.in" + full_url
+
+                    # Parse posting date
+                    try:
+                        posted_date = datetime.strptime(
+                            date_posted,
+                            "%d-%m-%Y"
+                        ).date()
+
+                        page_dates.append(posted_date)
+
+                    except ValueError:
+                        print(
+                            f"⚠️ Could not parse date "
+                            f"'{date_posted}' for {title}"
+                        )
+                        continue
+
+                    # Only keep jobs posted within last 3 days
+                    if oldest_date <= posted_date <= today:
+
+                        # Use URL as the unique identifier.
+                        # This avoids relying on Infopark's numeric
+                        # job ID for date detection.
+                        jobs[full_url] = {
                             "date_posted": date_posted,
+                            "posted_date": posted_date,
                             "title": title,
                             "company": company,
                             "last_date": last_date,
                             "url": full_url
                         }
 
+                        print(
+                            f"   ✅ {date_posted} | "
+                            f"{title} | {company}"
+                        )
+
+                # Infopark currently sorts jobs newest first.
+                # Once the oldest job on a page is older than our
+                # 3-day window, there is no need to fetch further pages.
+                if page_dates and min(page_dates) < oldest_date:
+                    print(
+                        f"⏹️ Page {page} contains jobs older than "
+                        f"the 3-day window. Stopping pagination."
+                    )
+                    break
+
                 time.sleep(1)
+
             except Exception as e:
-                print(f"⚠️ Error on page {page}: {e}")
+                print(
+                    f"⚠️ Error fetching Infopark page {page}: {e}"
+                )
+
         return jobs
 
+    # ---------------------------------------------------------
+    # Extract job description from current Infopark detail page
+    # ---------------------------------------------------------
     def fetch_job_details(jobs_to_fetch):
-        job_details_dict = {}
-        print(f"\n🔍 Fetching details for {len(jobs_to_fetch)} job(s) from last 3 days...\n")
 
-        for job_id, job in jobs_to_fetch.items():
+        job_details_dict = {}
+
+        print(
+            f"\n🔍 Fetching details for "
+            f"{len(jobs_to_fetch)} Infopark job(s)...\n"
+        )
+
+        for job_url, job in jobs_to_fetch.items():
+
             try:
                 print(f"🔗 Visiting: {job['url']}")
-                response = requests.get(job['url'], headers=HEADERS, verify=False)
-                soup = BeautifulSoup(response.text, "html.parser")
-                details_div = soup.find("div", class_="deatil-box")
-                
-                if details_div:
-                    job_details_dict[job_id] = {
+
+                response = requests.get(
+                    job["url"],
+                    headers=HEADERS,
+                    verify=False,
+                    timeout=30
+                )
+
+                response.raise_for_status()
+
+                soup = BeautifulSoup(
+                    response.text,
+                    "html.parser"
+                )
+
+                # Remove elements that are not part of the job content
+                for element in soup.find_all(
+                    ["script", "style", "noscript"]
+                ):
+                    element.decompose()
+
+                # -------------------------------------------------
+                # Current Infopark detail pages no longer reliably
+                # use the old "deatil-box" class.
+                #
+                # Find the job title in the rendered page and use
+                # the content following it.
+                # -------------------------------------------------
+                page_text = soup.get_text(
+                    "\n",
+                    strip=True
+                )
+
+                description = ""
+
+                title = job["title"].strip()
+
+                # Find the LAST occurrence of the title.
+                # This helps avoid breadcrumbs/navigation text.
+                title_position = page_text.rfind(title)
+
+                if title_position != -1:
+
+                    description = page_text[
+                        title_position + len(title):
+                    ].strip()
+
+                    # Remove common footer content
+                    footer_markers = [
+                        "About Infopark",
+                        "About Us",
+                        "© Copyright",
+                        "Copyright ©",
+                        "Follow Us"
+                    ]
+
+                    for marker in footer_markers:
+
+                        marker_position = description.find(marker)
+
+                        if marker_position != -1:
+                            description = description[
+                                :marker_position
+                            ].strip()
+
+                # -------------------------------------------------
+                # Fallback: use main/body content if title was not
+                # found for some reason.
+                # -------------------------------------------------
+                if not description:
+
+                    main_content = (
+                        soup.find("main")
+                        or soup.find("body")
+                    )
+
+                    if main_content:
+
+                        description = main_content.get_text(
+                            "\n",
+                            strip=True
+                        )
+
+                if description:
+
+                    job_details_dict[job_url] = {
                         "title": job["title"],
                         "company": job["company"],
-                        "details_html": str(details_div),
+                        "details_html": description,
                         "url": job["url"],
                         "last_date": job["last_date"]
                     }
@@ -145,64 +304,86 @@ def fetch_infopark_jobs():
                         "url": job["url"],
                         "location": "Infopark",
                         "closing_date": job["last_date"],
-                        "job_description": details_div.get_text(strip=True)
+                        "job_description": description
                     })
+
+                    print(
+                        f"   ✅ Description fetched: "
+                        f"{job['title']}"
+                    )
+
                 else:
-                    print(f"❌ Could not find detail-box for job ID {job_id}")
+
+                    print(
+                        f"❌ Could not extract description "
+                        f"for {job['title']}"
+                    )
 
                 time.sleep(1)
 
             except Exception as e:
-                print(f"⚠️ Error fetching job ID {job_id}: {e}")
+
+                print(
+                    f"⚠️ Error fetching "
+                    f"{job['url']}: {e}"
+                )
 
         return job_details_dict
 
+    # ---------------------------------------------------------
+    # MAIN INFOPARK PROCESS
+    # ---------------------------------------------------------
 
-    print("🔎 Checking for jobs posted within last 3 days at Infopark...")
-    
-    # Load the last 3 days' job IDs
-    ids_queue = load_last_3_days_ids()
-    print(f"📅 Previous 3-day IDs: {ids_queue}")
-    
-    # Get threshold for 3-day window
-    threshold_id = get_3_day_threshold(ids_queue)
-    print(f"🎯 Threshold ID (3 days ago): {threshold_id}")
-    
-    # Fetch all current jobs
-    all_jobs = fetch_all_jobs()
-    
-    if not all_jobs:
-        print("⚠️ No jobs found.")
+    print(
+        "🔎 Checking for jobs posted "
+        "within last 3 days at Infopark..."
+    )
 
-    
-    # Find jobs within last 3 days
-    jobs_last_3_days = {jid: info for jid, info in all_jobs.items() if jid > threshold_id}
-    
-    if jobs_last_3_days:
-        print(f"✅ Found {len(jobs_last_3_days)} job(s) posted within last 3 days.")
-        print(f"📊 Job ID range: {min(jobs_last_3_days.keys())} to {max(jobs_last_3_days.keys())}")
-        
-        # Fetch detailed information for these jobs
-        detailed_jobs = fetch_job_details(jobs_last_3_days)
-        
-        if detailed_jobs:
-            print(f"\n📋 Successfully fetched details for {len(detailed_jobs)} jobs:")
-            for job_id, details in detailed_jobs.items():
-                print(f"  • [{job_id}] {details['title']} at {details['company']}")
-        else:
-            print("📭 No detailed job information could be fetched.")
+    # Fetch only jobs from the actual date range.
+    jobs_last_3_days = fetch_all_jobs()
+
+    if not jobs_last_3_days:
+
+        print(
+            "📭 No Infopark jobs found "
+            "within the last 3 days."
+        )
+
+        print("🔚 Finished processing Infopark jobs.")
+        return
+
+    print(
+        f"\n✅ Found {len(jobs_last_3_days)} "
+        f"Infopark job(s) posted within last 3 days."
+    )
+
+    # Fetch detailed information
+    detailed_jobs = fetch_job_details(
+        jobs_last_3_days
+    )
+
+    if detailed_jobs:
+
+        print(
+            f"\n📋 Successfully fetched details for "
+            f"{len(detailed_jobs)} Infopark job(s):"
+        )
+
+        for job_url, details in detailed_jobs.items():
+
+            print(
+                f"  • {details['title']} "
+                f"at {details['company']}"
+            )
+
     else:
-        print("📭 No jobs found within the last 3 days.")
-    
-    # Update the IDs queue with today's highest job ID
-    if all_jobs:
-        highest_id_today = max(all_jobs.keys())
-        ids_queue = update_ids_queue(ids_queue, highest_id_today)
-        save_last_3_days_ids(ids_queue)
-        print(f"\n💾 Updated 3-day IDs queue: {ids_queue}")
-        print(f"🆕 Today's highest job ID: {highest_id_today}")
-    
-    print("🔚 Finished processing jobs.")
+
+        print(
+            "📭 No detailed Infopark job information "
+            "could be fetched."
+        )
+
+    print("🔚 Finished processing Infopark jobs.")
 
 
 def fetch_technopark_jobs():
@@ -311,11 +492,11 @@ def ai_parsing():
             })
 
             # 5. Rate Limiting
-            time.sleep(20)
+            time.sleep(14)
 
         except Exception as e:
             print(f"⚠️ Error parsing job {job['job_title']}: {e}")
-            time.sleep(60)
+            time.sleep(300)
             continue
 
 def main():
@@ -332,5 +513,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
