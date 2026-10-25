@@ -9,6 +9,14 @@
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <link rel="manifest" href="site.webmanifest">
     <title>Kerala Tech Jobs - Latest Opportunities in Infopark & Technopark</title>
+    <meta name="description" content="Discover the latest tech job opportunities in Kerala, including vacancies at Infopark Kochi and Technopark Trivandrum. Search jobs by skills, company, role, and experience." />
+    <meta name="robots" content="index,follow" />
+    <meta name="theme-color" content="#667eea" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Kerala Tech Jobs - Latest Tech Opportunities" />
+    <meta property="og:description" content="Explore technology jobs in Infopark Kochi and Technopark Trivandrum." />
+    <meta name="twitter:card" content="summary" />
+    <!-- Add a canonical URL and og:url after the production domain is finalized. -->
     <style>
         * {
             margin: 0;
@@ -423,6 +431,65 @@
             margin-bottom: 2rem;
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .job-filters {
+            display: grid;
+            grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(150px, 1fr));
+            gap: 0.75rem;
+            margin: 0 0 1.5rem;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 0.75rem 0.9rem;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            background: #fff;
+            color: #374151;
+            font: inherit;
+        }
+
+        .results-status {
+            color: #6b7280;
+            margin: 0 0 1rem;
+        }
+
+        .no-results {
+            grid-column: 1 / -1;
+            padding: 2.5rem 1rem;
+            text-align: center;
+            border: 1px dashed #cbd5e1;
+            border-radius: 16px;
+            background: #f8fafc;
+            color: #475569;
+        }
+.modal-overlay[aria-hidden="true"] { pointer-events: none; }
+        .modal:focus { outline: none; }
+
+        @media (max-width: 768px) {
+            .job-filters { grid-template-columns: 1fr; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -540,12 +607,6 @@
             <p>Discover the latest opportunities from Infopark and Technopark. From internships to senior roles, find
                 the perfect match for your career.</p>
 
-            <div class="search-section">
-                <div class="search-bar">
-                    <input type="text" class="search-input" placeholder="Search jobs, companies, or skills...">
-                    <button class="search-btn">Search</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -555,20 +616,53 @@
                 <h2 class="section-title">Latest Job Openings</h2>
             </div>
 
+            <div class="job-filters" role="search" aria-label="Filter job openings">
+                <label class="sr-only" for="jobSearch">Search jobs</label>
+                <input id="jobSearch" type="search" class="search-input" placeholder="Search jobs, companies, or skills..." aria-label="Search jobs, companies, or skills">
+                <label class="sr-only" for="locationFilter">Location</label>
+                <select id="locationFilter" class="filter-select" aria-label="Filter by location">
+                    <option value="">All locations</option>
+                    <option value="infopark">Infopark / Kochi</option>
+                    <option value="technopark">Technopark / Trivandrum</option>
+                    <option value="remote">Remote</option>
+                </select>
+                <label class="sr-only" for="typeFilter">Job type</label>
+                <select id="typeFilter" class="filter-select" aria-label="Filter by job type">
+                    <option value="">All job types</option>
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                    <option value="internship">Internship</option>
+                    <option value="contract">Contract</option>
+                </select>
+                <label class="sr-only" for="experienceFilter">Experience level</label>
+                <select id="experienceFilter" class="filter-select" aria-label="Filter by experience level">
+                    <option value="">All experience levels</option>
+                    <option value="fresher">Fresher / Entry-level</option>
+                    <option value="junior">Junior</option>
+                    <option value="mid-level">Mid-level</option>
+                    <option value="senior">Senior</option>
+                </select>
+            </div>
+            <p id="resultsStatus" class="results-status" aria-live="polite"></p>
             <div class="jobs-grid">
                 <!-- JOBS_PLACEHOLDER -->
+                <div id="noResults" class="no-results" hidden>
+                    <h3>No jobs found</h3>
+                    <p>Try a different keyword or clear one or more filters.</p>
+                    <button type="button" class="search-btn" id="clearFilters" style="margin-top: 1rem;">Clear search and filters</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="jobModal">
-        <div class="modal">
+    <div class="modal-overlay" id="jobModal" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
             <div class="modal-header">
-                <div><p style="color: #0b1e45; font-size: 15px; line-height: 1.2; font-style: italic;">
+                <div><h2 id="modalTitle" class="sr-only">Job details</h2><p style="color: #0b1e45; font-size: 15px; line-height: 1.2; font-style: italic;">
     Please verify the company’s legitimacy before applying. Avoid any job that asks for payment,it’s likely a scam.
 </p>
 </div>
-                <button class="modal-close" id="closeModal">X</button>
+                <button class="modal-close" id="closeModal" type="button" aria-label="Close job details">×</button>
             </div>
             <div class="modal-body">
                 <div class="modal-content" id="modalContent">
@@ -580,7 +674,7 @@
     <div class="footer">
         <div class="container">
             <p style="color: #9ca3af;">
-                © 2025 Kerala Tech Jobs. Made with ❤️ for Kerala's tech community by Sid.<br>
+                © <span id="current-year"></span> Kerala Tech Jobs. Made with ❤️ for Kerala's tech community by Sid.<br>
                 <small>Last updated: <!-- LAST_UPDATED --></small><br>
                 <small><a href="mailto:sidharthr333@gmail.com" style="color: inherit; text-decoration: none;">Contact Me</a></small>
             </p>
@@ -589,175 +683,205 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Modal and Search Functionality
+            // Dynamic footer year.
+            const yearElement = document.getElementById('current-year');
+            if (yearElement) yearElement.textContent = new Date().getFullYear();
+
             const modal = document.getElementById('jobModal');
+            const modalDialog = modal ? modal.querySelector('.modal') : null;
             const modalContent = document.getElementById('modalContent');
-            const closeModal = document.getElementById('closeModal');
+            const closeModalButton = document.getElementById('closeModal');
             const jobsGrid = document.querySelector('.jobs-grid');
+            const searchInput = document.getElementById('jobSearch');
+            const locationFilter = document.getElementById('locationFilter');
+            const typeFilter = document.getElementById('typeFilter');
+            const experienceFilter = document.getElementById('experienceFilter');
+            const resultsStatus = document.getElementById('resultsStatus');
+            const noResults = document.getElementById('noResults');
+            const clearFiltersButton = document.getElementById('clearFilters');
+            const jobCards = Array.from(document.querySelectorAll('.jobs-grid .job-card'));
+            let lastFocusedElement = null;
 
-            // --- Modal Event Handling ---
-            // Use event delegation on the jobs grid for a more targeted and robust approach.
-            if (jobsGrid) {
-                jobsGrid.addEventListener('click', function (e) {
-                    // Find the closest '.view-details-btn' parent of the clicked element.
-                    // This is more reliable than checking e.target directly.
-                    const button = e.target.closest('.view-details-btn');
+            // Sanitize scraped HTML with a strict allow-list before displaying it in the modal.
+            function sanitizeJobHtml(dirtyHtml) {
+                const allowedTags = new Set([
+                    'A', 'ABBR', 'B', 'BLOCKQUOTE', 'BR', 'CODE', 'DD', 'DEL', 'DIV', 'DL',
+                    'DT', 'EM', 'H2', 'H3', 'H4', 'HR', 'I', 'LI', 'OL', 'P', 'PRE',
+                    'S', 'SMALL', 'SPAN', 'STRONG', 'SUB', 'SUP', 'TABLE', 'TBODY', 'TD',
+                    'TH', 'THEAD', 'TR', 'U', 'UL'
+                ]);
+                const allowedAttributes = new Set(['href', 'title', 'target', 'rel', 'colspan', 'rowspan']);
+                const parsed = new DOMParser().parseFromString(String(dirtyHtml || ''), 'text/html');
+                parsed.querySelectorAll('script, style, iframe, object, embed, form, input, button, meta, link, base, svg, math').forEach(el => el.remove());
 
-                    if (button) {
-                        e.preventDefault();
-                        const jobCard = button.closest('.job-card');
-
-                        const jobDetails = jobCard.querySelector('.job-details').innerHTML;
-
-                        modalContent.innerHTML = jobDetails;
-
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-                    }
-                });
+                function cleanNode(node) {
+                    Array.from(node.childNodes).forEach(child => {
+                        if (child.nodeType === Node.COMMENT_NODE) {
+                            child.remove();
+                        } else if (child.nodeType === Node.ELEMENT_NODE) {
+                            if (!allowedTags.has(child.tagName)) {
+                                child.replaceWith(...Array.from(child.childNodes));
+                                return;
+                            }
+                            Array.from(child.attributes).forEach(attr => {
+                                const name = attr.name.toLowerCase();
+                                const value = attr.value.trim();
+                                if (!allowedAttributes.has(name) || name.startsWith('on') ||
+                                    ((name === 'href') && /^(javascript|data|vbscript):/i.test(value))) {
+                                    child.removeAttribute(attr.name);
+                                }
+                            });
+                            if (child.tagName === 'A') {
+                                const href = child.getAttribute('href');
+                                if (href && !/^(https?:|mailto:|tel:|\/|#)/i.test(href)) child.removeAttribute('href');
+                                if (child.getAttribute('target') === '_blank') child.setAttribute('rel', 'noopener noreferrer');
+                            }
+                            cleanNode(child);
+                        }
+                    });
+                }
+                cleanNode(parsed.body);
+                return parsed.body.innerHTML;
             }
 
-            // Close modal
+            function openModal(button) {
+                const jobCard = button.closest('.job-card');
+                const details = jobCard && jobCard.querySelector('.job-details');
+                if (!details || !modal || !modalDialog || !modalContent) return;
+                lastFocusedElement = button;
+                modalContent.innerHTML = sanitizeJobHtml(details.innerHTML);
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                closeModalButton.focus();
+            }
+
             function closeModalFunction() {
+                if (!modal || !modal.classList.contains('active')) return;
                 modal.classList.remove('active');
-                document.body.style.overflow = 'auto';
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                if (lastFocusedElement && document.contains(lastFocusedElement)) lastFocusedElement.focus();
             }
 
-            if (closeModal) {
-                closeModal.addEventListener('click', closeModalFunction);
-            }
-
-            // Close modal when clicking outside
-            if (modal) {
-                modal.addEventListener('click', function (e) {
-                    if (e.target === modal) {
-                        closeModalFunction();
+            if (jobsGrid) {
+                jobsGrid.addEventListener('click', function (event) {
+                    const button = event.target.closest('.view-details-btn');
+                    if (button) {
+                        event.preventDefault();
+                        openModal(button);
                     }
                 });
             }
-
-            // Close modal with Escape key
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+            if (closeModalButton) closeModalButton.addEventListener('click', closeModalFunction);
+            if (modal) {
+                modal.addEventListener('click', function (event) {
+                    if (event.target === modal) closeModalFunction();
+                });
+            }
+            document.addEventListener('keydown', function (event) {
+                if (!modal || !modal.classList.contains('active')) return;
+                if (event.key === 'Escape') {
+                    event.preventDefault();
                     closeModalFunction();
+                } else if (event.key === 'Tab' && modalDialog) {
+                    const focusable = Array.from(modalDialog.querySelectorAll(
+                        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                    )).filter(el => el.offsetParent !== null);
+                    if (!focusable.length) {
+                        event.preventDefault();
+                        modalDialog.focus();
+                    } else if (event.shiftKey && document.activeElement === focusable[0]) {
+                        event.preventDefault();
+                        focusable[focusable.length - 1].focus();
+                    } else if (!event.shiftKey && document.activeElement === focusable[focusable.length - 1]) {
+                        event.preventDefault();
+                        focusable[0].focus();
+                    }
                 }
             });
 
-            // --- Search Functionality ---
-            const searchInput = document.querySelector('.search-input');
-            const searchBtn = document.querySelector('.search-btn');
-            const jobCards = document.querySelectorAll('.job-card');
-
+            // Filters use normalized metadata generated from jobs.json, not keyword guesses
+            // against the entire visible description. Unknown metadata does not match a filter.
             function performSearch() {
-                const query = searchInput.value.toLowerCase().trim();
+                const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+                const location = locationFilter ? locationFilter.value : '';
+                const type = typeFilter ? typeFilter.value : '';
+                const experience = experienceFilter ? experienceFilter.value : '';
+                let visibleCount = 0;
 
                 jobCards.forEach(card => {
-                    const jobTitle = card.querySelector('.job-title').textContent.toLowerCase();
-                    const companyName = card.querySelector('.company-name').textContent.toLowerCase();
-                    const jobDescription = card.querySelector('.job-description').textContent.toLowerCase();
-                    const jobDetails = card.querySelector('.job-details') ? card.querySelector('.job-details').textContent.toLowerCase() : '';
+                    const title = card.querySelector('.job-title');
+                    const company = card.querySelector('.company-name');
+                    const description = card.querySelector('.job-description');
+                    const details = card.querySelector('.job-details');
+                    const tags = card.querySelector('.job-tags');
+                    const searchable = [title, company, description, details, tags]
+                        .filter(Boolean)
+                        .map(el => el.textContent.toLowerCase())
+                        .join(' ');
 
-                    const searchText = `${jobTitle} ${companyName} ${jobDescription} ${jobDetails}`;
+                    const cardLocation = card.dataset.location || 'unknown';
+                    const cardType = card.dataset.employmentType || 'unknown';
+                    const experienceLevels = (card.dataset.experienceLevels || '')
+                        .split(',').filter(Boolean);
 
-                    if (query === '' || searchText.includes(query)) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
+                    const matches = (!query || searchable.includes(query)) &&
+                        (!location || cardLocation === location) &&
+                        (!type || cardType === type) &&
+                        (!experience || experienceLevels.includes(experience));
+
+                    card.hidden = !matches;
+                    card.style.display = matches ? '' : 'none';
+                    if (matches) visibleCount++;
                 });
+
+                if (noResults) noResults.hidden = visibleCount !== 0;
+                if (resultsStatus) {
+                    resultsStatus.textContent = visibleCount +
+                        (visibleCount === 1 ? ' job found' : ' jobs found');
+                }
             }
-
-            // Search Event listeners
-            if (searchInput) {
-                searchInput.addEventListener('input', performSearch);
-                searchInput.addEventListener('keypress', function (e) {
-                    if (e.key === 'Enter') {
-                        performSearch();
-                    }
-                });
-            }
-
-            if (searchBtn) {
-                searchBtn.addEventListener('click', performSearch);
-            }
-
-            // --- Animation Functionality ---
-            const animationStyles = `
-        .job-card {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .job-card.animate-in {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    `;
-
-            // Inject styles
-            const styleSheet = document.createElement('style');
-            styleSheet.textContent = animationStyles;
-            document.head.appendChild(styleSheet);
-
-            // Setup Intersection Observer for animations
-            const animateOnScroll = () => {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach((entry, index) => {
-                        if (entry.isIntersecting) {
-                            // Add staggered delay
-                            setTimeout(() => {
-                                entry.target.classList.add('animate-in');
-                            }, index * 100);
-
-                            // Stop observing this card
-                            observer.unobserve(entry.target);
-                        }
-                    });
-                }, {
-                    threshold: 0.1,
-                    rootMargin: '0px 0px -50px 0px'
-                });
-
-                // Observe all job cards
-                document.querySelectorAll('.job-card').forEach(card => {
-                    observer.observe(card);
-                });
-            };
-
-            // Initialize animations
-            animateOnScroll();
-        });
-
-        // Initialize animations if page is already loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function () {
-                // Animation initialization is already handled above
+            [searchInput, locationFilter, typeFilter, experienceFilter].forEach(control => {
+                if (!control) return;
+                control.addEventListener('input', performSearch);
+                control.addEventListener('change', performSearch);
             });
-        } else {
-            // If DOM is already loaded, initialize animations
-            const animateOnScroll = () => {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach((entry, index) => {
+            if (clearFiltersButton) {
+                clearFiltersButton.addEventListener('click', function () {
+                    if (searchInput) searchInput.value = '';
+                    if (locationFilter) locationFilter.value = '';
+                    if (typeFilter) typeFilter.value = '';
+                    if (experienceFilter) experienceFilter.value = '';
+                    performSearch();
+                    if (searchInput) searchInput.focus();
+                });
+            }
+            performSearch();
+
+            // Single animation initialization path, respecting reduced-motion preferences.
+            const animationStyles = document.createElement('style');
+            animationStyles.textContent = `
+                @media (prefers-reduced-motion: no-preference) {
+                    .job-card { opacity: 0; transform: translateY(18px); transition: opacity .35s ease, transform .35s ease; }
+                    .job-card.animate-in { opacity: 1; transform: translateY(0); }
+                }
+            `;
+            document.head.appendChild(animationStyles);
+            if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                const observer = new IntersectionObserver(entries => {
+                    entries.forEach(entry => {
                         if (entry.isIntersecting) {
-                            setTimeout(() => {
-                                entry.target.classList.add('animate-in');
-                            }, index * 100);
+                            entry.target.classList.add('animate-in');
                             observer.unobserve(entry.target);
                         }
                     });
-                }, {
-                    threshold: 0.1,
-                    rootMargin: '0px 0px -50px 0px'
-                });
-
-                document.querySelectorAll('.job-card').forEach(card => {
-                    observer.observe(card);
-                });
-            };
-
-            animateOnScroll();
-        }
+                }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+                jobCards.forEach(card => observer.observe(card));
+            } else {
+                jobCards.forEach(card => card.classList.add('animate-in'));
+            }
+        });
     </script>
 </body>
 
