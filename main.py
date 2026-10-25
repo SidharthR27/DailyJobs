@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 import json
 import markdown
 from groq import Groq
+import urllib3
+from urllib3.exceptions import InsecureRequestWarning
+
+urllib3.disable_warnings(InsecureRequestWarning)
 
 def fetch_infopark_jobs():
     global combined_new_jobs
@@ -386,52 +390,213 @@ def fetch_infopark_jobs():
     print("🔚 Finished processing Infopark jobs.")
 
 
+
 def fetch_technopark_jobs():
+    import json
+    import requests
+    from datetime import datetime
+    from bs4 import BeautifulSoup
+
     global combined_new_jobs
+
     if_new_jobs = False
     print("🔎 Fetching jobs from Technopark...")
-    
+
     today = datetime.today().date()
 
-    # get latest jobs from Technopark api
-    header = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"}
+    header = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-GB,en;q=0.8",
+        "Referer": "https://technopark.in/job-search",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/138.0.0.0 Safari/537.36"
+        ),
+    }
 
+    base_url = "https://technopark.in"
     all_jobs = []
-    for i in range(1,7):
-        page = requests.get(url=f"https://technopark.org/api/paginated-jobs?page={i}&search=&type=", headers=header)
-        if page.json()["data"]:
-            all_jobs += page.json()["data"]
-        else:
-            break
-
     technopark_new_jobs = []
 
-    # add the job details to array and also add the markdown message for the mail
-    for job in all_jobs:
-        if abs((today- datetime.strptime(job["posted_date"], "%Y-%m-%d").date()).days) <=2:
-            if_new_jobs = True
-            technopark_new_jobs.append({"job_title": job["job_title"], "company": job["company"]["company"].title(), "url": f'https://technopark.org/job-details/{job["id"]}', "location": "Technopark", "closing_date": datetime.strptime(job["closing_date"], "%Y-%m-%d").strftime("%d %b %Y")})
-        else:
+    # -----------------------------------------------------
+    # 1. Fetch jobs from the paginated API
+    # -----------------------------------------------------
+    for i in range(1, 7):
+        api_url = (
+            f"{base_url}/api/paginated-jobs"
+            f"?page={i}&search=&type="
+        )
+
+        try:
+            page_response = requests.get(
+                api_url,
+                headers=header,
+                timeout=20,
+            )
+            page_response.raise_for_status()
+
+            payload = page_response.json()
+            page_jobs = payload.get("data", [])
+
+            if not page_jobs:
+                break
+
+            all_jobs.extend(page_jobs)
+
+        except (requests.RequestException, ValueError, AttributeError) as exc:
+            print(f"❌ Failed to fetch Technopark page {i}: {exc}")
             break
-        
-    # get job details from each urls and scraping to find the necessary details to feed to AI
+
+    print(f"📋 Retrieved {len(all_jobs)} jobs from Technopark.")
+
+    # -----------------------------------------------------
+    # 2. Select jobs posted within the last two days
+    # -----------------------------------------------------
+    for job in all_jobs:
+        try:
+            posted_date = datetime.strptime(
+                job["posted_date"], "%Y-%m-%d"
+            ).date()
+
+            if abs((today - posted_date).days) > 2:
+                continue
+
+            job_id = job.get("id")
+            company_data = job.get("company") or {}
+            company_name = company_data.get("company", "Unknown Company")
+
+            if not job_id:
+                print("⚠️ Skipping a job without an ID.")
+                continue
+
+            closing_date_raw = job.get("closing_date", "")
+            closing_date = ""
+
+            if closing_date_raw:
+                closing_date = datetime.strptime(
+                    closing_date_raw, "%Y-%m-%d"
+                ).strftime("%d %b %Y")
+
+            technopark_new_jobs.append({
+                "job_title": job.get("job_title", "Untitled Job"),
+                "company": company_name.title(),
+                "url": f"{base_url}/job-details/{job_id}",
+                "location": "Technopark",
+                "closing_date": closing_date,
+                "posted_date": posted_date.strftime("%d %b %Y"),
+            })
+
+            if_new_jobs = True
+
+        except (KeyError, TypeError, ValueError) as exc:
+            print(f"⚠️ Skipping malformed job listing: {exc}")
+
+    # -----------------------------------------------------
+    # 3. Extract descriptions from the job-detail pages
+    # -----------------------------------------------------
     for job in technopark_new_jobs:
         print(f"🔗 Visiting: {job['url']}")
-        response = requests.get(url=job["url"], headers=header)
-        soup = BeautifulSoup(response.content, "html.parser")
-        job_div = soup.select_one("#app > div.relative.min-h-screen.w-full.pt-20 > div > div.mb-10.flex.flex-col.bg-white.shadow-2xl")
-        job_desc = job_div.getText()
-        job["job_description"] = job_desc
 
+        try:
+            response = requests.get(
+                job["url"],
+                headers=header,
+                timeout=20,
+            )
+            response.raise_for_status()
 
-    # send mails if there are new jobs today
+            soup = BeautifulSoup(response.text, "html.parser")
+            description = ""
+
+            # The new website stores Inertia data on #app[data-page].
+            app = soup.select_one("#app[data-page]")
+
+            if app:
+                raw_data = app.get("data-page")
+
+                if raw_data:
+                    try:
+                        page_data = json.loads(raw_data)
+                        props = page_data.get("props", {})
+                        job_listing = props.get("jobListing") or {}
+
+                        # Prefer the original HTML description.
+                        description_html = job_listing.get(
+                            "job_description", ""
+                        )
+
+                        if description_html:
+                            desc_soup = BeautifulSoup(
+                                description_html, "html.parser"
+                            )
+
+                            for tag in desc_soup.select(
+                                "script, style"
+                            ):
+                                tag.decompose()
+
+                            description = desc_soup.get_text(
+                                "\n", strip=True
+                            )
+
+                        # Fallback to the plain-text description.
+                        if not description:
+                            description = job_listing.get(
+                                "job_description_content", ""
+                            )
+
+                            if description:
+                                description = BeautifulSoup(
+                                    description, "html.parser"
+                                ).get_text("\n", strip=True)
+
+                    except (json.JSONDecodeError, TypeError, AttributeError) as exc:
+                        print(
+                            f"⚠️ Could not parse embedded job data: {exc}"
+                        )
+
+            # HTML fallback if embedded data extraction fails.
+            if not description:
+                description_div = soup.select_one(
+                    ".jd-description-text"
+                )
+
+                if description_div:
+                    description = description_div.get_text(
+                        "\n", strip=True
+                    )
+
+            if description:
+                job["job_description"] = description
+                print(
+                    f"✅ Extracted description for {job['job_title']} "
+                    f"({len(description)} characters)"
+                )
+            else:
+                job["job_description"] = ""
+                print(
+                    f"⚠️ No description found for {job['job_title']}"
+                )
+
+        except requests.RequestException as exc:
+            job["job_description"] = ""
+            print(f"❌ Failed to fetch {job['url']}: {exc}")
+
+    # -----------------------------------------------------
+    # 4. Add the new jobs to the combined results
+    # -----------------------------------------------------
     if if_new_jobs:
         combined_new_jobs.extend(technopark_new_jobs)
-        # print(technopark_new_jobs)
+        print(
+            f"✅ Added {len(technopark_new_jobs)} Technopark jobs."
+        )
     else:
         print("No new jobs at Technopark, exiting...")
 
+
 def ai_parsing():
+
     global combined_new_jobs
     global final_jobs_list
     # client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
